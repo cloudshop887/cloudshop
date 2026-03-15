@@ -9,6 +9,8 @@
     "client": "cd frontend && npm run dev",
     "community": "cd community-frontend && npm run dev",
     "install-all": "npm install && cd backend && npm install && cd frontend && npm install && cd community-frontend && npm install",
+    "build": "npm run build:client",
+    "build:client": "cd frontend && npm run build",
     "prisma:generate": "cd backend && npx prisma generate",
     "prisma:migrate": "cd backend && npx prisma migrate dev",
     "start": "concurrently \"cd backend && npm start\" \"cd frontend && npm start\" \"cd community-frontend && npm start\""

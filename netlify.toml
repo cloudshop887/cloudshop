@@ -1,4 +1,7 @@
-# Global redirects for monorepo
+[build]
+  command = "npm run build:client"
+  publish = "frontend/dist"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
