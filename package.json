@@ -1,0 +1,25 @@
+{
+  "name": "cloudshop-root",
+  "version": "1.0.0",
+  "description": "Root package for CloudShop application",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND,COMMUNITY\" -c \"blue,green,magenta\" \"npm run server\" \"npm run client\" \"npm run community\"",
+    "launch": "npm run prisma:generate && npm run dev",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm run dev",
+    "community": "cd community-frontend && npm run dev",
+    "install-all": "npm install && cd backend && npm install && cd frontend && npm install && cd community-frontend && npm install",
+    "prisma:generate": "cd backend && npx prisma generate",
+    "prisma:migrate": "cd backend && npx prisma migrate dev",
+    "start": "concurrently \"cd backend && npm start\" \"cd frontend && npm start\" \"cd community-frontend && npm start\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

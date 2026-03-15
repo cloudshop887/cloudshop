@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utilities - Light Theme */
+.glass {
+  @apply bg-white/70 backdrop-blur-lg border border-white/40 shadow-sm;
+}
+
+.glass-card {
+  @apply bg-white/60 backdrop-blur-md border border-white/50 rounded-xl shadow-lg shadow-sky-100/50;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600;
+}

@@ -1,0 +1,329 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  phone     String?  @unique
+  password  String
+  fullName  String?
+  address   String?
+  profilePic String?
+  googleId  String?  @unique
+  firebaseUid String? @unique
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+
+  // Relations
+  shop          Shop?
+  orders        Order[]
+  cart          CartItem[]
+  wishlist      WishlistItem[]
+  savedShops    SavedShop[]
+  viewedItems   ViewedItem[]
+  reviews       Review[]
+  notifications Notification[]
+  lostItems     LostAndFound[]
+  alerts        Alert[]  @relation("UserAlerts")
+  reservations  Reservation[]
+}
+
+// OTP Model for Phone Authentication
+model OTP {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  otpHash   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([phone, used])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Shop {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  address       String
+  latitude      Float?
+  longitude     Float?
+  category      String
+  logoUrl       String?
+  bannerUrl     String?
+  openingHours  String?
+  openTime      String?  // Format: "HH:mm" e.g. "09:00"
+  closeTime     String?  // Format: "HH:mm" e.g. "21:00"
+  isApproved    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  ownerId       Int      @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Order Support
+  isPickupEnabled   Boolean @default(true)
+  isDeliveryEnabled Boolean @default(true)
+
+  // Reserve & Pick Discount Settings
+  isReservePickDiscountEnabled Boolean @default(false)
+  reservePickDiscountPercentage Float?
+  bulkDiscountMinItems         Int?
+  bulkDiscountPercentage       Float?
+
+  // Relations
+  owner         User     @relation(fields: [ownerId], references: [id])
+  products      Product[]
+  orders        Order[]
+  savedBy       SavedShop[]
+  jobVacancies  JobVacancy[]
+  offers        Offer[]
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Decimal
+  offerPrice    Decimal?
+  stock         Int      @default(0)
+  imageUrl      String?
+  category      String
+  subcategory   String?
+  isActive      Boolean  @default(true)
+  views         Int      @default(0)
+  shopId        Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  shop          Shop     @relation(fields: [shopId], references: [id])
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  viewedBy      ViewedItem[]
+  reviews       Review[]
+  reservations  Reservation[]
+}
+
+
+
+model Order {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  shopId        Int
+  totalAmount   Decimal
+  status        String    @default("PENDING")
+  deliveryMethod String @default("DELIVERY")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id])
+  shop          Shop        @relation(fields: [shopId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id            Int      @id @default(autoincrement())
+  orderId       Int
+  productId     Int
+  quantity      Int
+  price         Decimal
+
+  // Relations
+  order         Order    @relation(fields: [orderId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+}
+
+model CartItem {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  productId     Int
+  quantity      Int      @default(1)
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model WishlistItem {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  productId     Int
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model SavedShop {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  shopId        Int
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  shop          Shop     @relation(fields: [shopId], references: [id])
+
+  @@unique([userId, shopId])
+}
+
+model ViewedItem {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  productId     Int
+  viewedAt      DateTime @default(now())
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  productId     Int
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+}
+
+model LostAndFound {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  type        String   // LOST or FOUND
+  title       String
+  description String
+  location    String
+  contact     String
+  imageUrl    String?
+  status      String   @default("OPEN") // OPEN or RESOLVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model JobVacancy {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  title       String
+  description String
+  salary      String?
+  jobType     String   // FULL_TIME, PART_TIME, CONTRACT
+  requirements String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop        Shop     @relation(fields: [shopId], references: [id])
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, WARNING, SUCCESS, PROMOTION
+  role      String   @default("ALL")  // ALL, USER, SHOP_OWNER, ADMIN
+  createdAt DateTime @default(now())
+}
+
+model Offer {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  title       String
+  description String
+  discount    String?  // e.g. "20% OFF"
+  code        String?  // e.g. "SAVE20"
+  expiryDate  DateTime?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop        Shop     @relation(fields: [shopId], references: [id])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String   // EMERGENCY, COMMUNITY, OFFER, GENERAL
+  location    String
+  latitude    Float?
+  longitude   Float?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  userId      Int?
+  anonymous   Boolean  @default(false)
+  ipAddress   String
+  verified    Boolean  @default(false)
+
+  // Relations
+  user        User?    @relation("UserAlerts", fields: [userId], references: [id])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model Reservation {
+  id                    Int      @id @default(autoincrement())
+  userId                Int
+  productId             Int
+  shopId                Int
+  quantity              Int      @default(1)
+  originalPrice         Decimal
+  discountPercentage    Float    @default(0)
+  discountedPrice       Decimal
+  bulkDiscountApplied   Boolean  @default(false)
+  bulkDiscountPercentage Float   @default(0)
+  status                String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, PICKED_UP
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}

@@ -1,0 +1,16 @@
+# Root .gitignore for secure sharing
+node_modules/
+.env
+.env.*
+.DS_Store
+dist/
+/backend/node_modules/
+/frontend/node_modules/
+/community-frontend/node_modules/
+/backend/*.db
+/backend/*.db-journal
+/backend/latest_email_preview.txt
+/backend/ethereal_creds.txt
+.vercel/
+.vscode/
+serviceAccountKey.json

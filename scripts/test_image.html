@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Test</title>
+</head>
+<body>
+    <h2>Testing share.google image</h2>
+    
+    <h3>Original share.google URL:</h3>
+    <img src="https://share.google/images/pLlqDXs6tgcahaYoT" style="max-width: 300px;" onerror="this.style.border='2px solid red'">
+    
+    <h3>Converted to Drive thumbnail:</h3>
+    <img src="https://drive.google.com/thumbnail?id=pLlqDXs6tgcahaYoT&sz=w1000" style="max-width: 300px;" onerror="this.style.border='2px solid red'">
+    
+    <h3>Try uc endpoint:</h3>
+    <img src="https://drive.google.com/uc?export=view&id=pLlqDXs6tgcahaYoT" style="max-width: 300px;" onerror="this.style.border='2px solid red'">
+    
+    <script>
+        // Log any errors
+        window.addEventListener('error', function(e) {
+            console.error('Image load error:', e);
+        }, true);
+    </script>
+</body>
+</html>
