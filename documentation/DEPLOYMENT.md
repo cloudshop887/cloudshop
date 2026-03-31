@@ -1,83 +1,77 @@
-# Deployment Guide
+# Deployment Guide - Neon Database Only
 
-This guide explains how to deploy your CloudShop application for free using popular services.
+This guide explains how to deploy your CloudShop application using **Neon PostgreSQL** database.
 
-## 1. Prerequisites
+## Prerequisites
 
-- A GitHub account.
-- Your code pushed to a GitHub repository.
-- A cloud database (MySQL).
+- A GitHub account  
+- Your code pushed to a GitHub repository  
+- A Neon PostgreSQL account
 
-## 2. Database Deployment (MySQL)
+## 1. Database Setup (Neon PostgreSQL)
 
-Since your app uses MySQL, you need a cloud-hosted database.
-**Options:**
-- **Railway (Recommended for ease):** Create a new project -> Add Database -> MySQL.
-- **PlanetScale:** Excellent for scaling, but check free tier availability.
-- **Aiven:** Offers a free MySQL tier.
+**Neon** is a fully managed PostgreSQL database that's perfect for your Python Flask backend.
 
-**After creating the database:**
-- Get the **Connection URL** (e.g., `mysql://user:password@host:port/database`).
-- You will need this for the Backend deployment.
+### Steps:
+1. Go to [neon.tech](https://console.neon.tech) and sign up (free).
+2. Create a new project.
+3. Copy your **connection string** (it will look like: `postgresql://user:password@host:port/database`).
+   - Make sure to use the **Pooler** endpoint for better performance.
+4. You'll need this for your Flask backend.
 
-## 3. Backend Deployment (Node.js/Express)
+## 2. Local Development with Neon
 
-We recommend **Render** or **Railway** for the backend because they support long-running Node.js processes (unlike Vercel/Netlify which are optimized for frontend/serverless).
+### Set up environment variables:
 
-### Option A: Render (Free Tier)
-1. Sign up at [render.com](https://render.com).
-2. Click **New +** -> **Web Service**.
-3. Connect your GitHub repository.
-4. Settings:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm start`
-5. **Environment Variables:**
-   - `DATABASE_URL`: (Paste your MySQL connection string from Step 2)
-   - `JWT_SECRET`: (Create a strong random string)
-   - `PORT`: (Render sets this automatically, but your code supports it)
+1. In the `api/` folder, create a `.env` file:
+   ```
+   DATABASE_URL=postgresql://user:password@host:port/database
+   JWT_SECRET=your-secret-key
+   FLASK_ENV=development
+   ```
 
-### Option B: Railway
-1. Sign up at [railway.app](https://railway.app).
-2. Create a new project from your GitHub repo.
-3. Configure the `backend` service variables (`DATABASE_URL`, `JWT_SECRET`).
+2. Install dependencies:
+   ```bash
+   cd api
+   pip install -r requirements.txt
+   ```
 
-### Important: Prisma Setup
-For both Render and Railway, we added a `postinstall` script to `package.json` that runs `prisma generate`. This ensures the Prisma Client is generated for the production environment.
+3. Run the Flask backend:
+   ```bash
+   python index.py
+   ```
+   Your backend will run on `http://localhost:5000`.
 
-**Database Migrations:**
-- **Render:** You can add a "Build Command" or "Pre-Deploy Command" of `npm run migrate` to apply database changes automatically. Or, you can manually run this command in the Render shell.
-- **Railway:** You can add a deploy trigger or run `npm run migrate` in the command palette.
+## 3. Local Frontend Setup
 
-**After deployment:**
-- Copy the **Backend URL** (e.g., `https://cloudshop-backend.onrender.com`).
+### For the main React app:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Frontend runs on `http://localhost:5173`.
 
-## 4. Frontend Deployment (Vercel/Netlify)
+### For the Community alerts (Next.js):
+```bash
+cd community-frontend
+npm install
+npm run dev
+```
+Runs on `http://localhost:3000`.
 
-Now deploy the React frontend.
+## 4. Production Deployment Options
 
-### Option A: Vercel (Recommended)
-1. Sign up at [vercel.com](https://vercel.com).
-2. Click **Add New...** -> **Project**.
-3. Import your GitHub repository.
-4. Settings:
-   - **Framework Preset:** Vite (should be auto-detected).
-   - **Root Directory:** `frontend`
-5. **Environment Variables:**
-   - `VITE_API_URL`: (Paste your **Backend URL** from Step 3, e.g., `https://cloudshop-backend.onrender.com/api`)
-     *Note: Make sure to include `/api` at the end if your backend routes expect it.*
-6. Click **Deploy**.
+When ready to go live:
 
-### Option B: Netlify
-1. Sign up at [netlify.com](https://netlify.com).
-2. **Add new site** -> **Import from existing project**.
-3. Connect GitHub.
-4. Settings:
-   - **Base directory:** `frontend`
-   - **Build command:** `npm run build`
-   - **Publish directory:** `dist`
-5. **Environment Variables:**
-   - `VITE_API_URL`: (Paste your **Backend URL**)
+### Backend Options:
+- **Railway** or **PythonAnywhere** for Flask  
+- Use your Neon connection string as `DATABASE_URL`
+
+### Frontend Options:
+- **Vercel** (Recommended for React/Vite)
+- **Netlify** (Alternative)
+- Set `VITE_API_URL` to your production backend URL
 6. Click **Deploy**.
 
 ## 5. Final Checks
