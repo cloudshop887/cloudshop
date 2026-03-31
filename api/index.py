@@ -27,6 +27,11 @@ db_url = os.getenv('DATABASE_URL', 'sqlite:///cloudshop.db')
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
+# Ensure SSL for Neon/Postgres if not sqlite
+if 'sqlite' not in db_url and 'sslmode' not in db_url:
+    separator = '&' if '?' in db_url else '?'
+    db_url += f"{separator}sslmode=require"
+
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'cloudshop-secret-key-2024')
