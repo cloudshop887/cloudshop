@@ -40,8 +40,15 @@ def register():
         profile_pic=profile_pic,
         role='USER'
     )
-    db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'message': 'Registration failed (Database Error)',
+            'error': str(e)
+        }), 500
 
     return jsonify({
         '_id': user.id,
@@ -242,21 +249,28 @@ def firebase_login():
     if not user and email:
         user = User.query.filter_by(email=email).first()
     
-    if not user:
-        user = User(
-            full_name=full_name,
-            email=email,
-            firebase_uid=firebase_uid,
-            password=generate_password_hash(secrets.token_hex(16)),
-            profile_pic=profile_pic,
-            role='USER'
-        )
-        db.session.add(user)
-        db.session.commit()
-    else:
-        if firebase_uid and not user.firebase_uid:
-            user.firebase_uid = firebase_uid
+    try:
+        if not user:
+            user = User(
+                full_name=full_name,
+                email=email,
+                firebase_uid=firebase_uid,
+                password=generate_password_hash(secrets.token_hex(16)),
+                profile_pic=profile_pic,
+                role='USER'
+            )
+            db.session.add(user)
             db.session.commit()
+        else:
+            if firebase_uid and not user.firebase_uid:
+                user.firebase_uid = firebase_uid
+                db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'message': 'Firebase login failed (Database Error)',
+            'error': str(e)
+        }), 500
 
     return jsonify({
         '_id': user.id,

@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
 
-from database import db, init_db
+from database import db, socketio, seed_admin
 from routes.auth_routes import auth_bp
 from routes.shop_routes import shop_bp
 from routes.product_routes import product_bp
@@ -37,9 +37,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'cloudshop-secret-key-2024')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Token doesn't expire (30d equivalent)
 
-from flask_socketio import SocketIO
-
-from database import db, init_db, socketio
+# Duplicate socketio removed (line 6)
+# Duplicate imports removed
 
 # Initialize extensions
 db.init_app(app)
@@ -102,12 +101,14 @@ def setup_db():
             # We wrap this in try-catch because DB connection might be slow on first boot
             with app.app_context():
                 db.create_all()
-                # seed_admin can sometimes fail if executed concurrently
-                from database import seed_admin
+                # seed_admin already imported at top level
                 seed_admin()
             _db_initialized = True
         except Exception as e:
-            print(f"DATABASE INIT FAILED: {str(e)}")
+            db.session.rollback()
+            print(f"DATABASE INIT FAILED (Rolling back): {str(e)}")
+            import traceback
+            traceback.print_exc()
             # We don't set _db_initialized=True so we can try again on next req
 
 # For Vercel: Export the flask app
