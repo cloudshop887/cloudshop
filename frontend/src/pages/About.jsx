@@ -34,7 +34,7 @@ const About = () => {
                     className="text-center mb-16"
                 >
                     <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-                        We Are <span className="text-primary">CloudShop</span>
+                        We Are <span className="text-primary">LocalLink</span>
                     </h1>
                     <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
                         Bridging the gap between local commerce and digital convenience.
@@ -107,7 +107,7 @@ const About = () => {
 
                 {/* How It Works */}
                 <div className="mb-20">
-                    <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">How CloudShop Works</h2>
+                    <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">How LocalLink Works</h2>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                         {/* For Shop Owners */}
@@ -175,7 +175,7 @@ const About = () => {
                     viewport={{ once: true }}
                     className="glass-card p-10 text-center"
                 >
-                    <h2 className="text-3xl font-bold text-slate-900 mb-8">Why Choose CloudShop?</h2>
+                    <h2 className="text-3xl font-bold text-slate-900 mb-8">Why Choose LocalLink?</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
                             <div className="mx-auto w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">

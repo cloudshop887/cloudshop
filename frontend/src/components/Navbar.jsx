@@ -66,7 +66,7 @@ const Navbar = () => {
 
                             <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2">
                                 <ShoppingBag className="h-8 w-8 text-primary" />
-                                <span className="text-lg sm:text-xl font-bold tracking-wider text-slate-800 block">CLOUD SHOP</span>
+                                <span className="text-lg sm:text-xl font-bold tracking-wider text-slate-800 block">LocalLink</span>
                             </Link>
                         </div>
 

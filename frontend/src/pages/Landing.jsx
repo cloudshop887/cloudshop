@@ -7,18 +7,23 @@ const Landing = () => {
     return (
         <div className="min-h-screen pt-16">
             {/* Hero Section */}
-            <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-12">
-                <div className="absolute inset-0 bg-[url('/cloudshoplogo.png')] bg-cover bg-center opacity-80"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-sky-50/50 via-white/80 to-white"></div>
+            <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-12 bg-slate-50">
+                {/* Optimized background: CSS mesh gradient instead of 1.5MB image */}
+                <div className="absolute inset-0 opacity-20" style={{
+                    backgroundImage: `radial-gradient(circle at 2px 2px, #0ea5e9 1px, transparent 0)`,
+                    backgroundSize: '40px 40px'
+                }}></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-sky-100/30 via-white/80 to-white"></div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                         className="text-4xl md:text-7xl font-bold mb-6 text-slate-900"
                     >
-                        Discover Local Shops in <span className="text-gradient">One Tap</span>
+                        LocalLink <span className="text-gradient">Smart Bazaar</span>
                     </motion.h1>
 
                     <motion.p
@@ -27,7 +32,7 @@ const Landing = () => {
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="text-xl md:text-2xl text-slate-600 mb-8 max-w-3xl mx-auto"
                     >
-                        Multi-Vendor Cloud Marketplace | Shop Registration | Real-Time Visibility
+                        LocalLink Unified Smart Bazaar Ecosystem | Shop Registration | Real-Time Visibility
                     </motion.p>
 
                     <motion.div
@@ -77,7 +82,7 @@ const Landing = () => {
                         transition={{ duration: 0.6 }}
                         className="text-center mb-16"
                     >
-                        <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-900">What is <span className="text-primary">CloudShop</span>?</h2>
+                        <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-900">What is <span className="text-primary">LocalLink</span>?</h2>
                         <div className="w-24 h-1 bg-primary mx-auto rounded-full"></div>
                     </motion.div>
 
@@ -122,7 +127,7 @@ const Landing = () => {
             {/* Footer */}
             <footer className="bg-slate-900 text-slate-400 py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p>© 2024 CloudShop. All rights reserved.</p>
+                    <p>© 2024 LocalLink Unified Smart Bazaar Ecosystem. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link to="/about" className="hover:text-white transition-colors">About</Link>
                         <Link to="/shops" className="hover:text-white transition-colors">Shops</Link>

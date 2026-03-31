@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Star, ArrowRight, Filter, Navigation } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -69,12 +69,14 @@ const Shops = () => {
         }
     };
 
-    const filteredShops = shops.filter(shop => {
-        const matchesSearch = shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            shop.address.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    const filteredShops = useMemo(() => {
+        return shops.filter(shop => {
+            const matchesSearch = shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                shop.address.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = selectedCategory === 'All' || shop.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [shops, searchTerm, selectedCategory]);
 
     return (
         <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
@@ -131,12 +133,13 @@ const Shops = () => {
                                 >
                                     <div className="h-48 bg-slate-200 relative">
                                         <img
-                                            src={getDirectDriveLink(shop.bannerUrl) || "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"}
+                                            src={getDirectDriveLink(shop.bannerUrl, 400) || "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60"}
                                             alt={shop.name}
                                             className="w-full h-full object-cover"
+                                            loading="lazy"
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80";
+                                                e.target.src = "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60";
                                             }}
                                         />
                                         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">
@@ -147,9 +150,10 @@ const Shops = () => {
                                         {shop.logoUrl && (
                                             <div className="absolute -bottom-6 left-6 p-1 bg-white rounded-full shadow-lg">
                                                 <img
-                                                    src={getDirectDriveLink(shop.logoUrl)}
+                                                    src={getDirectDriveLink(shop.logoUrl, 100)}
                                                     alt={shop.name}
                                                     className="w-16 h-16 rounded-full object-cover border-2 border-white"
+                                                    loading="lazy"
                                                     onError={(e) => {
                                                         e.target.onerror = null;
                                                         e.target.src = "https://placehold.co/64?text=Logo";

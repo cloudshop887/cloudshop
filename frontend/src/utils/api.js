@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    timeout: 10000, // 10 second timeout
     headers: {
         'Content-Type': 'application/json',
     },
@@ -36,7 +37,7 @@ api.interceptors.response.use(
     }
 );
 
-export const getDirectDriveLink = (url) => {
+export const getDirectDriveLink = (url, size = 800) => {
     if (!url) return '';
 
     // If it's already a data URI or blob, return it
@@ -54,7 +55,7 @@ export const getDirectDriveLink = (url) => {
         if (id) {
             // Revert back to Google's thumbnail endpoint, as it successfully proxies embedded images
             // bypassing CORS and raw-file download limits.
-            return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+            return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
         }
     }
 

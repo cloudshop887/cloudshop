@@ -13,8 +13,8 @@ const CustomerDashboard = () => {
     useEffect(() => {
         fetchCustomerData();
 
-        // Poll for updates every 30 seconds to keep stats fresh
-        const intervalId = setInterval(fetchCustomerData, 30000);
+        // Poll for updates every 60 seconds to keep stats fresh
+        const intervalId = setInterval(fetchCustomerData, 60000);
         return () => clearInterval(intervalId);
     }, []);
 

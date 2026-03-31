@@ -176,12 +176,13 @@ const ShopDetail = () => {
             {/* Compact Shop Banner */}
             <div className="relative h-40 bg-slate-200 mt-4">
                 <img
-                    src={getDirectDriveLink(shop.bannerUrl) || "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"}
+                    src={getDirectDriveLink(shop.bannerUrl, 600) || "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=70"}
                     alt={shop.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                     onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80";
+                        e.target.src = "https://images.unsplash.com/photo-1534723452862-4c874018d66d?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=70";
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -194,9 +195,10 @@ const ShopDetail = () => {
                         {/* Logo */}
                         {shop.logoUrl && (
                             <img
-                                src={getDirectDriveLink(shop.logoUrl)}
+                                src={getDirectDriveLink(shop.logoUrl, 150)}
                                 alt={`${shop.name} logo`}
                                 className="w-16 h-16 rounded-full border-2 border-white shadow-md object-cover flex-shrink-0"
+                                loading="lazy"
                                 onError={(e) => {
                                     e.target.onerror = null;
                                     e.target.src = "https://placehold.co/100?text=Logo";
@@ -360,12 +362,13 @@ const ShopDetail = () => {
                                             {/* Product Image - Compact */}
                                             <div className="h-40 bg-slate-100 relative group">
                                                 <img
-                                                    src={getDirectDriveLink(product.imageUrl) || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80"}
+                                                    src={getDirectDriveLink(product.imageUrl, 300) || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&q=80"}
                                                     alt={product.name}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    loading="lazy"
                                                     onError={(e) => {
                                                         e.target.onerror = null;
-                                                        e.target.src = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80";
+                                                        e.target.src = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&q=80";
                                                     }}
                                                 />
                                                 {product.offerPrice && (

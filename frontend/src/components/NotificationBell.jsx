@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -15,13 +15,7 @@ const NotificationBell = () => {
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            };
-
-            const { data } = await axios.get('http://localhost:5000/api/notifications', config);
+            const { data } = await api.get('/notifications');
             setNotifications(data);
             setUnreadCount(data.filter(n => !n.isRead).length);
         } catch (error) {
@@ -31,7 +25,7 @@ const NotificationBell = () => {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+        const interval = setInterval(fetchNotifications, 60000); // Poll every 60 seconds
 
         return () => clearInterval(interval);
     }, []);
@@ -51,14 +45,7 @@ const NotificationBell = () => {
 
     const markAsRead = async (id) => {
         try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            };
-
-            await axios.put(`http://localhost:5000/api/notifications/${id}/read`, {}, config);
+            await api.put(`/notifications/${id}/read`);
 
             // Update local state
             setNotifications(notifications.map(n =>
@@ -72,14 +59,7 @@ const NotificationBell = () => {
 
     const markAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            };
-
-            await axios.put(`http://localhost:5000/api/notifications/read/all`, {}, config);
+            await api.put(`/notifications/read/all`);
 
             setNotifications(notifications.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
