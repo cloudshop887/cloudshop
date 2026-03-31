@@ -1,12 +1,9 @@
-"use client";
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/api';
 import AlertCard from './AlertCard';
-import { socket } from '@/lib/socket';
+import { socket } from '../../utils/socket';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, RefreshCw, Navigation, Search } from 'lucide-react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export default function AlertList() {
     const [alerts, setAlerts] = useState([]);
@@ -50,7 +47,7 @@ export default function AlertList() {
                 params.radius = radius;
             }
 
-            const response = await axios.get(`${API_URL}/alerts`, { params });
+            const response = await api.get(`/alerts`, { params });
             setAlerts(response.data);
         } catch (error) {
             console.error('Error fetching alerts:', error);

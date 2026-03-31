@@ -14,9 +14,6 @@ const Navbar = () => {
     const [user, setUser] = useState(null);
     const { getCartCount } = useCart();
     const cartCount = getCartCount();
-    
-    // Use /community which is proxied locally and configured on Vercel
-    const communityUrl = import.meta.env.VITE_COMMUNITY_URL || '/community';
 
     useEffect(() => {
         const userInfo = localStorage.getItem('userInfo');
@@ -85,8 +82,8 @@ const Navbar = () => {
                             )}
                             {user && (
                                 <>
-                                    <a
-                                        href={communityUrl}
+                                    <button
+                                        onClick={() => navigate('/community')}
                                         className="p-2 text-slate-600 hover:text-primary transition-colors relative group"
                                         title="Community Alerts"
                                     >
@@ -95,7 +92,7 @@ const Navbar = () => {
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                                         </span>
-                                    </a>
+                                    </button>
                                     <NotificationBell />
                                     <button
                                         onClick={handleCartClick}
@@ -180,10 +177,9 @@ const Navbar = () => {
                                     <NavLink to="/nearby-shops" icon={<MapPin className="w-5 h-5" />} label="Nearby Shops" onClick={() => setIsOpen(false)} />
                                     <NavLink to="/compare-prices" icon={<Scale className="w-5 h-5" />} label="Compare Prices" onClick={() => setIsOpen(false)} />
                                     <NavLink to="/search-products" icon={<Search className="w-5 h-5" />} label="Search Products" onClick={() => setIsOpen(false)} />
-                                    <a
-                                        href={communityUrl}
-                                        className="flex items-center justify-between p-4 bg-primary text-white rounded-2xl transition-all group shadow-lg shadow-sky-100"
-                                        onClick={() => setIsOpen(false)}
+                                    <button
+                                        onClick={() => { navigate('/community'); setIsOpen(false); }}
+                                        className="w-full flex items-center justify-between p-4 bg-primary text-white rounded-2xl transition-all group shadow-lg shadow-sky-100"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-white/20 rounded-xl">
@@ -198,7 +194,7 @@ const Navbar = () => {
                                             <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">LIVE</span>
                                             <ChevronRight className="w-4 h-4 text-white/50" />
                                         </div>
-                                    </a>
+                                    </button>
 
 
 

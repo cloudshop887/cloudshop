@@ -1,13 +1,10 @@
-"use client";
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
 import { LayoutGrid, Type, FileText, MapPin, CheckCircle2, AlertCircle, Image as ImageIcon, Navigation, X, RefreshCw } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
 export default function PostAlertForm() {
-    const router = useRouter();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState(false);
@@ -86,13 +83,10 @@ export default function PostAlertForm() {
         setLoading(true);
         setErrors({});
 
-        const token = localStorage.getItem('token');
-        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
         try {
-            await axios.post(`${API_URL}/alerts`, formData, config);
+            await api.post(`/alerts`, formData);
             setSuccess(true);
-            setTimeout(() => router.push('/'), 2000);
+            setTimeout(() => navigate('/community'), 2000);
         } catch (err) {
             setErrors({ global: err.response?.data?.message || 'Broadcast failed. Check connection.' });
         } finally {
@@ -133,7 +127,7 @@ export default function PostAlertForm() {
                     </div>
                 </div>
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => navigate('/community')}
                     className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all flex items-center group"
                     title="Cancel"
                 >

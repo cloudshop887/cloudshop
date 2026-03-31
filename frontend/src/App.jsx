@@ -36,7 +36,8 @@ import ComparePrices from './pages/ComparePrices';
 import PageTransition from './components/PageTransition';
 import GoogleCallback from './pages/GoogleCallback';
 import MyReservations from './pages/MyReservations';
-
+import CommunityAlerts from './pages/CommunityAlerts';
+import CommunityPost from './pages/CommunityPost';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -58,6 +59,8 @@ const AnimatedRoutes = () => {
         <Route path="/auth/google/callback" element={<PageTransition><GoogleCallback /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Navbar /><Register /></PageTransition>} />
         <Route path="/about" element={<PageTransition><Navbar /><About /></PageTransition>} />
+        <Route path="/community" element={<PageTransition><CommunityAlerts /></PageTransition>} />
+        <Route path="/community/post" element={<PageTransition><CommunityPost /></PageTransition>} />
         <Route path="/profile" element={<PageTransition><Navbar /><Profile /></PageTransition>} />
         <Route path="/settings" element={<PageTransition><Navbar /><Settings /></PageTransition>} />
         <Route path="/dashboard" element={<PageTransition><Navbar /><CustomerDashboard /></PageTransition>} />

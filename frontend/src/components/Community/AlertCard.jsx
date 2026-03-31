@@ -1,4 +1,4 @@
-"use client";
+import React from 'react';
 import { MapPin, Clock, Share2, AlertTriangle, Briefcase, Tag, Search, Info, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';

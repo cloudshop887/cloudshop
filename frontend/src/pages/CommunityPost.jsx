@@ -1,7 +1,8 @@
-import Navbar from "@/components/Navbar";
-import PostAlertForm from "@/components/PostAlertForm";
+import React from 'react';
+import Navbar from '../components/Navbar';
+import PostAlertForm from '../components/Community/PostAlertForm';
 
-export default function PostPage() {
+export default function CommunityPost() {
     return (
         <main className="min-h-screen pt-24 pb-12 bg-slate-50">
             <Navbar />
