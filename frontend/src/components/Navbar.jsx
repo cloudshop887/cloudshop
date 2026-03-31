@@ -15,8 +15,8 @@ const Navbar = () => {
     const { getCartCount } = useCart();
     const cartCount = getCartCount();
     
-    // Use environment variable for Community App URL or fallback to localhost
-    const communityUrl = import.meta.env.VITE_COMMUNITY_URL || 'http://localhost:3000';
+    // Use /community which is proxied locally and configured on Vercel
+    const communityUrl = import.meta.env.VITE_COMMUNITY_URL || '/community';
 
     useEffect(() => {
         const userInfo = localStorage.getItem('userInfo');
