@@ -23,7 +23,11 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cloudshop.db'
+db_url = os.getenv('DATABASE_URL', 'sqlite:///cloudshop.db')
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'cloudshop-secret-key-2024')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Token doesn't expire (30d equivalent)
