@@ -43,10 +43,10 @@ jwt = JWTManager(app)
 # Initialize SocketIO
 socketio.init_app(app)
 
-# CORS - allow frontend
+# CORS - allow frontend and any vercel previews
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:3000"],
+        "origins": ["*"],  # Simplified for Vercel, adjust as needed
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True
@@ -67,12 +67,18 @@ app.register_blueprint(reservation_bp, url_prefix='/api/reservations')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(distance_bp, url_prefix='/api/distance')
 
-@app.route('/')
-def index():
+@app.route('/api')
+def index_api():
     return {'message': 'CloudShop Flask API is running...'}
 
+@app.route('/')
+def root():
+    return {'message': 'Flask API is active.'}
+
+# For Vercel Serverless: Create tables upon first request or import
+with app.app_context():
+    init_db()
+
 if __name__ == '__main__':
-    with app.app_context():
-        init_db()
     port = int(os.getenv('PORT', 5000))
     socketio.run(app, debug=True, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
