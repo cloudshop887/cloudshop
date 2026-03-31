@@ -68,13 +68,23 @@ for prefix in ['/api', '']:
     app.register_blueprint(admin_bp, url_prefix=f'{prefix}/admin')
     app.register_blueprint(distance_bp, url_prefix=f'{prefix}/distance')
 
-@app.route('/api')
-def index_api():
-    return {'message': 'CloudShop API is active'}
+@app.route('/api/debug-ping')
+def debug_ping():
+    return {'status': 'OK', 'db_url': app.config['SQLALCHEMY_DATABASE_URI'].split('@')[-1]} # only show safe part
 
-@app.route('/')
-def root():
-    return {'status': 'API Running'}
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Pass through HTTP errors
+    import traceback
+    error_msg = str(e)
+    stack_trace = traceback.format_exc()
+    print(f"ERROR: {error_msg}")
+    print(stack_trace)
+    return jsonify({
+        "message": "Internal Server Error during registration/request",
+        "error": error_msg,
+        "trace": stack_trace if os.getenv('DEBUG_TRACE') == 'true' else None
+    }), 500
 
 # Lazy Init DB - only when requested to avoid cold-boot timeout
 _db_initialized = False
@@ -83,9 +93,17 @@ _db_initialized = False
 def setup_db():
     global _db_initialized
     if not _db_initialized:
-        with app.app_context():
-            init_db()
-        _db_initialized = True
+        try:
+            # We wrap this in try-catch because DB connection might be slow on first boot
+            with app.app_context():
+                db.create_all()
+                # seed_admin can sometimes fail if executed concurrently
+                from database import seed_admin
+                seed_admin()
+            _db_initialized = True
+        except Exception as e:
+            print(f"DATABASE INIT FAILED: {str(e)}")
+            # We don't set _db_initialized=True so we can try again on next req
 
 # For Vercel: Export the flask app
 # No changes needed, still using 'app'
