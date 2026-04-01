@@ -3,9 +3,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from database import db
 from models.user import User
-import hashlib, os, secrets
+import hashlib, os, secrets, logging
 from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
 auth_bp = Blueprint('auth', __name__)
 
 def generate_token(user_id):
@@ -21,7 +22,10 @@ def register():
     password = data.get('password')
     profile_pic = data.get('profilePic')
 
+    logger.info(f"Registration attempt: {email}")
+
     if not email or not password:
+        logger.warning(f"Registration failed - missing email or password")
         return jsonify({'message': 'Email and password are required'}), 400
 
     existing = User.query.filter(
@@ -29,6 +33,7 @@ def register():
     ).first() if phone else User.query.filter_by(email=email).first()
 
     if existing:
+        logger.warning(f"Registration failed - user exists: {email}")
         return jsonify({'message': 'User already exists with this email or phone'}), 400
 
     hashed = generate_password_hash(password)
@@ -43,8 +48,10 @@ def register():
     try:
         db.session.add(user)
         db.session.commit()
+        logger.info(f"✅ New user registered successfully in Neon: {email} (ID: {user.id})")
     except Exception as e:
         db.session.rollback()
+        logger.error(f"❌ Registration database error: {str(e)}")
         return jsonify({
             'message': 'Registration failed (Database Error)',
             'error': str(e)
@@ -66,13 +73,19 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
+    logger.info(f"Login attempt: {email}")
+
     if not email or not password:
+        logger.warning(f"Login failed - missing email or password")
         return jsonify({'message': 'Email and password are required'}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password, password):
+        logger.warning(f"Login failed - invalid credentials: {email}")
         return jsonify({'message': 'Invalid email or password'}), 401
 
+    logger.info(f"✅ User logged in successfully: {email} (ID: {user.id})")
+    
     return jsonify({
         '_id': user.id,
         'fullName': user.full_name,
@@ -226,57 +239,73 @@ def update_user_role(uid):
     db.session.commit()
     return jsonify(user.to_dict()), 200
 
-# ─── Firebase Login (stub - returns error gracefully) ─────────────────────────
+# ─── Firebase Login (Google OAuth via Firebase) ────────────────────────────────
 @auth_bp.route('/firebase-login', methods=['POST'])
 def firebase_login():
     """
-    Firebase login - this endpoint handles Google/Phone Firebase tokens.
-    For local dev with SQLite, we create/find user by email from Firebase token claims.
+    Firebase login - Creates or updates user from Google OAuth.
+    Stores all user data in Neon PostgreSQL database.
     """
     data = request.get_json()
     email = data.get('email')
     full_name = data.get('fullName') or data.get('name') or 'User'
-    profile_pic = data.get('profilePic') or data.get('photoURL')
+    profile_pic = data.get('profilePic') or data.get('photoURL') or ''
     firebase_uid = data.get('firebaseUid') or data.get('uid')
 
-    if not email and not firebase_uid:
-        return jsonify({'message': 'Firebase credentials required'}), 400
+    if not email:
+        return jsonify({'message': 'Email is required for Firebase login'}), 400
+    if not firebase_uid:
+        return jsonify({'message': 'Firebase UID is required'}), 400
 
-    # Find or create user
-    user = None
-    if firebase_uid:
-        user = User.query.filter_by(firebase_uid=firebase_uid).first()
-    if not user and email:
-        user = User.query.filter_by(email=email).first()
-    
     try:
+        # Find user by firebase_uid first, then by email
+        user = User.query.filter_by(firebase_uid=firebase_uid).first()
+        
         if not user:
-            user = User(
-                full_name=full_name,
-                email=email,
-                firebase_uid=firebase_uid,
-                password=generate_password_hash(secrets.token_hex(16)),
-                profile_pic=profile_pic,
-                role='USER'
-            )
-            db.session.add(user)
-            db.session.commit()
-        else:
-            if firebase_uid and not user.firebase_uid:
-                user.firebase_uid = firebase_uid
+            # Try to find by email (account migration case)
+            user = User.query.filter_by(email=email).first()
+            
+            if not user:
+                # Create new user in Neon database
+                user = User(
+                    full_name=full_name,
+                    email=email,
+                    firebase_uid=firebase_uid,
+                    password=generate_password_hash(secrets.token_hex(32)),  # Random password for OAuth users
+                    profile_pic=profile_pic,
+                    role='USER'
+                )
+                db.session.add(user)
                 db.session.commit()
+                print(f"✅ New Google user created: {email}")
+            else:
+                # Link existing account to Firebase
+                user.firebase_uid = firebase_uid
+                if not user.profile_pic and profile_pic:
+                    user.profile_pic = profile_pic
+                db.session.commit()
+                print(f"✅ Google account linked to existing user: {email}")
+        else:
+            # Update profile picture if provided
+            if profile_pic and not user.profile_pic:
+                user.profile_pic = profile_pic
+                db.session.commit()
+        
+        # All data is now stored in Neon PostgreSQL
+        return jsonify({
+            '_id': user.id,
+            'id': user.id,
+            'fullName': user.full_name,
+            'email': user.email,
+            'profilePic': user.profile_pic,
+            'role': user.role,
+            'token': generate_token(user.id)
+        }), 200
+        
     except Exception as e:
         db.session.rollback()
+        print(f"❌ Firebase login error: {str(e)}")
         return jsonify({
-            'message': 'Firebase login failed (Database Error)',
+            'message': 'Firebase login failed',
             'error': str(e)
         }), 500
-
-    return jsonify({
-        '_id': user.id,
-        'fullName': user.full_name,
-        'email': user.email,
-        'profilePic': user.profile_pic,
-        'role': user.role,
-        'token': generate_token(user.id)
-    }), 200

@@ -17,14 +17,14 @@ const FirebaseGoogleLogin = ({ text = "Continue with Google" }) => {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // Get ID Token
-            const idToken = await user.getIdToken();
-
             console.log('✅ Firebase Google Sign-In successful:', user.email);
 
-            // Send ID Token to backend for verification
+            // Send user data to backend for creation/verification
             const { data } = await api.post('/auth/firebase-login', {
-                idToken
+                email: user.email,
+                fullName: user.displayName || 'Google User',
+                profilePic: user.photoURL || '',
+                firebaseUid: user.uid
             });
 
             // Store token and user info

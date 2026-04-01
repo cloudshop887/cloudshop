@@ -32,20 +32,26 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Configuration
-db_url = os.getenv('DATABASE_URL', 'sqlite:///cloudshop.db')
+# Configuration - NEON DATABASE ONLY
+db_url = os.getenv('DATABASE_URL')
+
+if not db_url:
+    logger.error("ERROR: DATABASE_URL environment variable is required (Neon PostgreSQL connection string)")
+    raise ValueError("DATABASE_URL environment variable is required")
+
 is_production = os.getenv('FLASK_ENV') == 'production'
 
+# Convert postgres:// to postgresql://
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
-# Ensure SSL for Neon/Postgres if not sqlite
-if 'sqlite' not in db_url and 'sslmode' not in db_url:
+# Ensure SSL for Neon
+if 'sslmode' not in db_url:
     separator = '&' if '?' in db_url else '?'
     db_url += f"{separator}sslmode=require"
 
 logger.info(f"Starting Flask app in {'PRODUCTION' if is_production else 'DEVELOPMENT'} mode")
-logger.info(f"Database: {db_url.split('@')[-1] if '@' in db_url else db_url[:50]}")
+logger.info(f"Database: Neon PostgreSQL (SSL enabled)")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
