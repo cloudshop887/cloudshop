@@ -19,7 +19,7 @@ Flask-WTF==1.2.2
 fonttools==4.62.1
 fpdf==1.7.2
 fpdf2==2.8.7
-gevent==24.1.1
+gevent==24.2.1
 gevent-websocket==0.10.1
 greenlet==3.3.2
 gunicorn==21.2.0
