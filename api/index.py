@@ -121,6 +121,10 @@ def debug_ping():
         'initialized': _db_initialized
     }), 200
 
+@app.route('/ping')
+def ping():
+    return "pong", 200
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     """Global error handler"""
