@@ -68,7 +68,7 @@ jwt = JWTManager(app)
 socketio.init_app(
     app,
     cors_allowed_origins="*",
-    async_mode='threading' if not is_production else 'gevent_uwsgi',
+    async_mode='threading' if not is_production else 'gevent',
     engineio_logger=not is_production,
     socketio_logger=not is_production
 )
