@@ -95,15 +95,21 @@ socketio.init_app(
 )
 
 # Fix: remove supports_credentials when origins is wildcard (they conflict)
-# Allow multiple frontend origins (dev, Render, Vercel)
-allowed_origins = [
-    'http://localhost:5173',      # Local development
-    'http://localhost:3000',      # Alternative local port
-    'https://mrklocal.vercel.app', # Vercel frontend
-    'https://mrklocal.onrender.com', # Render frontend (if used)
-    os.getenv('FRONTEND_URL', ''), # From environment variable
+# Allow local dev, the stable frontend, and any Vercel preview deployment.
+extra_origins = [
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+    if origin.strip()
 ]
-# Filter out empty strings
+allowed_origins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://mrklocal.vercel.app',
+    'https://mrklocal.onrender.com',
+    r'https://.*\.vercel\.app',
+    os.getenv('FRONTEND_URL', ''),
+    *extra_origins,
+]
 allowed_origins = [origin for origin in allowed_origins if origin]
 
 CORS(app, resources={
