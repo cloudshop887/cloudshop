@@ -44,7 +44,24 @@ const Login = () => {
             navigate('/');
             window.location.reload(); // Reload to show Dashboard
         } catch (error) {
-            alert(error.response?.data?.message || 'Login Failed');
+            console.error('Login error:', error);
+            
+            // Better error messages
+            let errorMsg = 'Login failed';
+            
+            if (error.code === 'ECONNABORTED') {
+                errorMsg = 'Connection timeout - Backend server may be starting up. Please try again in a moment.';
+            } else if (error.code === 'ERR_NETWORK') {
+                errorMsg = 'Network error - Check your internet connection.';
+            } else if (error.response?.status === 401) {
+                errorMsg = 'Invalid email or password';
+            } else if (error.response?.status === 404) {
+                errorMsg = 'User not found';
+            } else if (error.response?.data?.message) {
+                errorMsg = error.response.data.message;
+            }
+            
+            alert(errorMsg);
         } finally {
             setLoading(false);
         }

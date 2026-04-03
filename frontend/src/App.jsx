@@ -39,50 +39,88 @@ import MyReservations from './pages/MyReservations';
 import CommunityAlerts from './pages/CommunityAlerts';
 import CommunityPost from './pages/CommunityPost';
 
+// Pages that should NOT show the main Navbar (admin, auth-only, etc.)
+const HIDE_NAVBAR_PATHS = [
+  '/admin',
+  '/admin/login',
+  '/admin/dashboard',
+  '/admin/users',
+  '/admin/shops',
+  '/admin/analytics',
+  '/admin/settings',
+  '/auth/google/callback',
+];
+
+const AppLayout = ({ children }) => {
+  const location = useLocation();
+
+  // Hide navbar for admin routes and google callback
+  const hideNavbar = HIDE_NAVBAR_PATHS.some(path =>
+    location.pathname.startsWith(path)
+  );
+
+  return (
+    <>
+      {/* ✅ Single global Navbar - renders once, fixed at top */}
+      {!hideNavbar && <Navbar />}
+
+      {/* ✅ Global layout padding:
+           pt-16 = clears fixed top navbar (h-16)
+           pb-20 = clears bottom nav bar (h-16 + safe area)
+           Admin pages get no padding since they have their own layout */}
+      <main className={!hideNavbar ? 'pt-16 pb-20 min-h-screen' : 'min-h-screen'}>
+        {children}
+      </main>
+    </>
+  );
+};
+
 const AnimatedRoutes = () => {
   const location = useLocation();
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Public Routes */}
-        <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
-        <Route path="/shops" element={<PageTransition><Navbar /><Shops /></PageTransition>} />
-        <Route path="/shops/:id" element={<PageTransition><Navbar /><ShopDetail /></PageTransition>} />
-        <Route path="/nearby-shops" element={<PageTransition><Navbar /><NearbyShops /></PageTransition>} />
-        <Route path="/search-products" element={<PageTransition><Navbar /><SearchProducts /></PageTransition>} />
-        <Route path="/compare-prices" element={<PageTransition><Navbar /><ComparePrices /></PageTransition>} />
-        <Route path="/register-shop" element={<PageTransition><Navbar /><RegisterShop /></PageTransition>} />
-        <Route path="/login" element={<PageTransition><Navbar /><Login /></PageTransition>} />
-        <Route path="/forgot-password" element={<PageTransition><Navbar /><ForgotPassword /></PageTransition>} />
-        <Route path="/reset-password/:resetToken" element={<PageTransition><Navbar /><ResetPassword /></PageTransition>} />
-        <Route path="/auth/google/callback" element={<PageTransition><GoogleCallback /></PageTransition>} />
-        <Route path="/register" element={<PageTransition><Navbar /><Register /></PageTransition>} />
-        <Route path="/about" element={<PageTransition><Navbar /><About /></PageTransition>} />
-        <Route path="/community" element={<PageTransition><CommunityAlerts /></PageTransition>} />
-        <Route path="/community/post" element={<PageTransition><CommunityPost /></PageTransition>} />
-        <Route path="/profile" element={<PageTransition><Navbar /><Profile /></PageTransition>} />
-        <Route path="/settings" element={<PageTransition><Navbar /><Settings /></PageTransition>} />
-        <Route path="/dashboard" element={<PageTransition><Navbar /><CustomerDashboard /></PageTransition>} />
 
-        {/* Shop Owner Routes */}
-        <Route path="/my-shop" element={<PageTransition><Navbar /><ShopOwnerDashboard /></PageTransition>} />
-        <Route path="/shop-settings" element={<PageTransition><Navbar /><ShopSettings /></PageTransition>} />
-        <Route path="/add-product" element={<PageTransition><Navbar /><AddProduct /></PageTransition>} />
-        <Route path="/bulk-upload" element={<PageTransition><Navbar /><BulkUploadProduct /></PageTransition>} />
-        <Route path="/edit-product/:id" element={<PageTransition><Navbar /><EditProduct /></PageTransition>} />
-        <Route path="/checkout" element={<PageTransition><Navbar /><Checkout /></PageTransition>} />
-        <Route path="/my-orders" element={<PageTransition><Navbar /><MyOrders /></PageTransition>} />
-        <Route path="/my-reservations" element={<PageTransition><Navbar /><MyReservations /></PageTransition>} />
+        {/* ── Public Routes ─────────────────────────────── */}
+        <Route path="/"                         element={<PageTransition><HomePage /></PageTransition>} />
+        <Route path="/shops"                    element={<PageTransition><Shops /></PageTransition>} />
+        <Route path="/shops/:id"                element={<PageTransition><ShopDetail /></PageTransition>} />
+        <Route path="/nearby-shops"             element={<PageTransition><NearbyShops /></PageTransition>} />
+        <Route path="/search-products"          element={<PageTransition><SearchProducts /></PageTransition>} />
+        <Route path="/compare-prices"           element={<PageTransition><ComparePrices /></PageTransition>} />
+        <Route path="/register-shop"            element={<PageTransition><RegisterShop /></PageTransition>} />
+        <Route path="/login"                    element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/forgot-password"          element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/reset-password/:resetToken" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/auth/google/callback"     element={<PageTransition><GoogleCallback /></PageTransition>} />
+        <Route path="/register"                 element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/about"                    element={<PageTransition><About /></PageTransition>} />
+        <Route path="/community"                element={<PageTransition><CommunityAlerts /></PageTransition>} />
+        <Route path="/community/post"           element={<PageTransition><CommunityPost /></PageTransition>} />
+        <Route path="/profile"                  element={<PageTransition><Profile /></PageTransition>} />
+        <Route path="/settings"                 element={<PageTransition><Settings /></PageTransition>} />
+        <Route path="/dashboard"                element={<PageTransition><CustomerDashboard /></PageTransition>} />
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<PageTransition><AdminLogin /></PageTransition>} />
-        <Route path="/admin/dashboard" element={<PageTransition><AdminLayout><AdminDashboard /></AdminLayout></PageTransition>} />
-        <Route path="/admin/users" element={<PageTransition><AdminLayout><AdminUsers /></AdminLayout></PageTransition>} />
-        <Route path="/admin/shops" element={<PageTransition><AdminLayout><AdminShops /></AdminLayout></PageTransition>} />
-        <Route path="/admin/analytics" element={<PageTransition><AdminLayout><AdminAnalytics /></AdminLayout></PageTransition>} />
-        <Route path="/admin/settings" element={<PageTransition><AdminLayout><AdminSettings /></AdminLayout></PageTransition>} />
-        <Route path="/admin/*" element={<PageTransition><AdminLayout><AdminDashboard /></AdminLayout></PageTransition>} />
+        {/* ── Shop Owner Routes ──────────────────────────── */}
+        <Route path="/my-shop"                  element={<PageTransition><ShopOwnerDashboard /></PageTransition>} />
+        <Route path="/shop-settings"            element={<PageTransition><ShopSettings /></PageTransition>} />
+        <Route path="/add-product"              element={<PageTransition><AddProduct /></PageTransition>} />
+        <Route path="/bulk-upload"              element={<PageTransition><BulkUploadProduct /></PageTransition>} />
+        <Route path="/edit-product/:id"         element={<PageTransition><EditProduct /></PageTransition>} />
+        <Route path="/checkout"                 element={<PageTransition><Checkout /></PageTransition>} />
+        <Route path="/my-orders"                element={<PageTransition><MyOrders /></PageTransition>} />
+        <Route path="/my-reservations"          element={<PageTransition><MyReservations /></PageTransition>} />
+
+        {/* ── Admin Routes (have their own AdminLayout, no main Navbar) ── */}
+        <Route path="/admin/login"              element={<PageTransition><AdminLogin /></PageTransition>} />
+        <Route path="/admin/dashboard"          element={<PageTransition><AdminLayout><AdminDashboard /></AdminLayout></PageTransition>} />
+        <Route path="/admin/users"              element={<PageTransition><AdminLayout><AdminUsers /></AdminLayout></PageTransition>} />
+        <Route path="/admin/shops"              element={<PageTransition><AdminLayout><AdminShops /></AdminLayout></PageTransition>} />
+        <Route path="/admin/analytics"          element={<PageTransition><AdminLayout><AdminAnalytics /></AdminLayout></PageTransition>} />
+        <Route path="/admin/settings"           element={<PageTransition><AdminLayout><AdminSettings /></AdminLayout></PageTransition>} />
+        <Route path="/admin/*"                  element={<PageTransition><AdminLayout><AdminDashboard /></AdminLayout></PageTransition>} />
+
       </Routes>
     </AnimatePresence>
   );
@@ -93,7 +131,10 @@ function App() {
     <CartProvider>
       <Router>
         <div className="min-h-screen bg-slate-50 text-slate-900">
-          <AnimatedRoutes />
+          {/* ✅ AppLayout wraps everything — handles Navbar visibility + padding globally */}
+          <AppLayout>
+            <AnimatedRoutes />
+          </AppLayout>
         </div>
       </Router>
     </CartProvider>

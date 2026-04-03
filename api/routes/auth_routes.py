@@ -69,31 +69,44 @@ def register():
 # ─── Login ────────────────────────────────────────────────────────────────────
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.get_json()
+        if not data:
+            logger.warning("Login failed - no JSON data")
+            return jsonify({'message': 'Invalid request format'}), 400
+            
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
 
-    logger.info(f"Login attempt: {email}")
+        logger.info(f"Login attempt: {email}")
 
-    if not email or not password:
-        logger.warning(f"Login failed - missing email or password")
-        return jsonify({'message': 'Email and password are required'}), 400
+        if not email or not password:
+            logger.warning(f"Login failed - missing email or password")
+            return jsonify({'message': 'Email and password are required'}), 400
 
-    user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password, password):
-        logger.warning(f"Login failed - invalid credentials: {email}")
-        return jsonify({'message': 'Invalid email or password'}), 401
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            logger.warning(f"Login failed - user not found: {email}")
+            return jsonify({'message': 'Invalid email or password'}), 401
+        
+        if not check_password_hash(user.password, password):
+            logger.warning(f"Login failed - invalid password for: {email}")
+            return jsonify({'message': 'Invalid email or password'}), 401
 
-    logger.info(f"✅ User logged in successfully: {email} (ID: {user.id})")
-    
-    return jsonify({
-        '_id': user.id,
-        'fullName': user.full_name,
-        'email': user.email,
-        'profilePic': user.profile_pic,
-        'role': user.role,
-        'token': generate_token(user.id)
-    }), 200
+        logger.info(f"✅ User logged in successfully: {email} (ID: {user.id}, Role: {user.role})")
+        
+        return jsonify({
+            '_id': user.id,
+            'fullName': user.full_name,
+            'email': user.email,
+            'profilePic': user.profile_pic,
+            'role': user.role,
+            'token': generate_token(user.id)
+        }), 200
+    except Exception as e:
+        logger.error(f"Login endpoint error: {str(e)}", exc_info=True)
+        return jsonify({'message': f'Server error: {str(e)}'}), 500
 
 # ─── Get Profile ──────────────────────────────────────────────────────────────
 @auth_bp.route('/profile', methods=['GET'])

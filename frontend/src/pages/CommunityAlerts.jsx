@@ -1,5 +1,4 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
 import AlertList from '../components/Community/AlertList';
 import { MapPin, Info, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,9 +7,7 @@ export default function CommunityAlerts() {
   const navigate = useNavigate();
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-16 pb-12 bg-slate-50 overflow-y-auto">
+    <main className="min-h-screen pb-12 bg-slate-50 overflow-y-auto">
 
       {/* Hero Section */}
       <div className="relative overflow-hidden mb-12">
@@ -59,6 +56,5 @@ export default function CommunityAlerts() {
         <p>&copy; 2026 CommunityAlert Platform. Built for a safer, more connected society.</p>
       </footer>
     </main>
-    </>
   );
 }

@@ -47,7 +47,23 @@ const AdminLogin = () => {
             navigate('/admin/dashboard');
         } catch (error) {
             console.error('Login error:', error);
-            alert(error.response?.data?.message || 'Invalid credentials');
+            
+            // Better error messages
+            let errorMsg = 'Login failed';
+            
+            if (error.code === 'ECONNABORTED') {
+                errorMsg = 'Connection timeout - Backend server may be starting up. Please try again in a moment.';
+            } else if (error.code === 'ERR_NETWORK') {
+                errorMsg = 'Network error - Check your internet connection or API URL configuration.';
+            } else if (error.response?.status === 401) {
+                errorMsg = 'Invalid email or password';
+            } else if (error.response?.status === 404) {
+                errorMsg = 'User not found';
+            } else if (error.response?.data?.message) {
+                errorMsg = error.response.data.message;
+            }
+            
+            alert(errorMsg);
         } finally {
             setLoading(false);
         }

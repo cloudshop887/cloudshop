@@ -44,7 +44,7 @@ const Landing = () => {
                         <Link to="/shops" className="bg-primary hover:bg-sky-600 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-200 hover:shadow-sky-300">
                             Explore Shops <ArrowRight className="w-5 h-5" />
                         </Link>
-                        <a href={import.meta.env.VITE_COMMUNITY_URL || "https://community-alerts.vercel.app"} target="_blank" rel="noopener noreferrer" className="bg-white hover:bg-slate-50 text-primary border-2 border-primary px-8 py-4 rounded-full text-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+                        <a href={import.meta.env.VITE_COMMUNITY_URL || "https://mrklocal.vercel.app/community"} target="_blank" rel="noopener noreferrer" className="bg-white hover:bg-slate-50 text-primary border-2 border-primary px-8 py-4 rounded-full text-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
                             Real-time Community Alerts
                         </a>
                         <Link to="/register-shop" className="glass hover:bg-white text-slate-700 px-8 py-4 rounded-full text-lg font-semibold transition-all border border-slate-200 shadow-sm hover:shadow-md">
@@ -64,7 +64,7 @@ const Landing = () => {
                         <span>React</span>
                         <span>Tailwind CSS</span>
                         <span>Node.js</span>
-                        <span>Prisma</span>
+                        <span>SQLite</span>
                         <span>Firebase</span>
                         <span>Socket.IO</span>
                         <span>Leaflet</span>
@@ -127,7 +127,7 @@ const Landing = () => {
             {/* Footer */}
             <footer className="bg-slate-900 text-slate-400 py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p>© 2024 LocalLink Unified Smart Bazaar Ecosystem. All rights reserved.</p>
+                    <p>Mrk © 2026 LocalLink Unified Smart Bazaar Ecosystem. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link to="/about" className="hover:text-white transition-colors">About</Link>
                         <Link to="/shops" className="hover:text-white transition-colors">Shops</Link>

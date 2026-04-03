@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Landing from './Landing';
-import Navbar from '../components/Navbar';
 
 const HomePage = () => {
     const [loading, setLoading] = useState(true);
@@ -45,12 +44,7 @@ const HomePage = () => {
     }
 
     // Show Landing page for non-logged-in users
-    return (
-        <>
-            <Navbar />
-            <Landing />
-        </>
-    );
+    return <Landing />;
 };
 
 export default HomePage;
