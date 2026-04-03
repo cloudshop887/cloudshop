@@ -10,7 +10,7 @@ export default function CommunityAlerts() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-20 pb-12 bg-slate-50">
+      <main className="min-h-screen pt-16 pb-12 bg-slate-50 overflow-y-auto">
 
       {/* Hero Section */}
       <div className="relative overflow-hidden mb-12">

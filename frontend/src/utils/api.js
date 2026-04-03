@@ -1,12 +1,26 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+    // Vercel Production: Use explicit Render URL
+    if (import.meta.env.PROD) {
+        return import.meta.env.VITE_API_URL || 'https://mrklocal.onrender.com/api';
+    }
+    // Local Development: Use localhost
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: getBaseURL(),
     timeout: 10000, // 10 second timeout
     headers: {
         'Content-Type': 'application/json',
     },
 });
+
+// Log API URL (only in dev)
+if (!import.meta.env.PROD) {
+    console.log('API Base URL:', api.defaults.baseURL);
+}
 
 // Add a request interceptor to attach the token
 api.interceptors.request.use(
