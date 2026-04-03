@@ -213,6 +213,23 @@ def bulk_upload_products():
             wb = openpyxl.load_workbook(io.BytesIO(file_content))
             ws = wb.active
             headers = [cell.value for cell in ws[1]]
+            
+            # Normalize header names (remove spaces, lowercase)
+            normalized_headers = {}
+            for header in headers:
+                if header:
+                    normalized = header.strip().lower().replace(' ', '')
+                    normalized_headers[normalized] = header
+            
+            logger.info(f"Headers found: {headers}")
+            logger.info(f"Normalized headers: {list(normalized_headers.keys())}")
+            
+            # Check for required columns
+            if 'name' not in normalized_headers and 'productname' not in normalized_headers and 'itemname' not in normalized_headers:
+                return jsonify({'message': 'Missing required "name" column in your spreadsheet'}), 400
+            if 'price' not in normalized_headers:
+                return jsonify({'message': 'Missing required "price" column in your spreadsheet'}), 400
+            
             rows = []
             for row in ws.iter_rows(min_row=2, values_only=True):
                 rows.append(dict(zip(headers, row)))
@@ -224,20 +241,46 @@ def bulk_upload_products():
 
         created = []
         errors = []
+        
+        # Helper function to get value from row using flexible column names
+        def get_row_value(row, *possible_keys):
+            """Get value from row using multiple possible column names"""
+            for key in possible_keys:
+                if key in row and row[key] is not None:
+                    return row[key]
+            return None
+        
         for idx, row in enumerate(rows, start=2):
             try:
-                if not row.get('name') or not row.get('price'):
+                # Get values with flexible column name matching
+                name = get_row_value(row, 'name', 'Name', 'product name', 'productname', 'Product Name', 'item name', 'itemname')
+                price = get_row_value(row, 'price', 'Price', 'unit price', 'unitprice', 'Unit Price')
+                description = get_row_value(row, 'description', 'Description', 'desc', 'Desc')
+                offer_price = get_row_value(row, 'offerPrice', 'offer price', 'offerprice', 'Offer Price', 'discount price', 'discountprice')
+                stock = get_row_value(row, 'stock', 'Stock', 'quantity', 'Quantity', 'qty', 'Qty')
+                image_url = get_row_value(row, 'imageUrl', 'image url', 'imageurl', 'Image URL', 'image', 'Image')
+                category = get_row_value(row, 'category', 'Category', 'cat', 'Cat')
+                subcategory = get_row_value(row, 'subcategory', 'sub category', 'subcategory', 'Subcategory', 'Sub Category')
+                
+                if not name or not price:
                     errors.append({'row': idx, 'error': 'Missing required fields (name, price)'})
                     continue
+                
+                try:
+                    price_float = float(price)
+                except (ValueError, TypeError):
+                    errors.append({'row': idx, 'error': f'Invalid price: {price} (must be a number)'})
+                    continue
+                
                 p = Product(
-                    name=row['name'],
-                    description=row.get('description', ''),
-                    price=float(row['price']),
-                    offer_price=float(row['offerPrice']) if row.get('offerPrice') else None,
-                    stock=int(row['stock']) if row.get('stock') else 0,
-                    image_url=row.get('imageUrl', ''),
-                    category=row.get('category', 'General'),
-                    subcategory=row.get('subcategory', ''),
+                    name=str(name).strip(),
+                    description=str(description).strip() if description else '',
+                    price=price_float,
+                    offer_price=float(offer_price) if offer_price else None,
+                    stock=int(float(stock)) if stock else 0,
+                    image_url=str(image_url).strip() if image_url else '',
+                    category=str(category).strip() if category else 'General',
+                    subcategory=str(subcategory).strip() if subcategory else '',
                     shop_id=shop.id
                 )
                 db.session.add(p)
