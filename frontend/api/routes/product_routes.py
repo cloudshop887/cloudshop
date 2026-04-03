@@ -4,6 +4,8 @@ from database import db
 from models.product import Product
 from models.shop import Shop
 from models.user import User
+import io
+import csv
 
 product_bp = Blueprint('products', __name__)
 
@@ -179,47 +181,94 @@ def bulk_upload_products():
         return jsonify({'message': 'No shop found for this user'}), 404
 
     if 'file' not in request.files:
-        return jsonify({'message': 'Please upload an Excel (.xlsx, .xls) or CSV (.csv) file'}), 400
+        return jsonify({'message': 'No file uploaded. Please attach a file with field name "file"'}), 400
 
     file = request.files['file']
-    import io
-    try:
-        import openpyxl
-        wb = openpyxl.load_workbook(io.BytesIO(file.read()))
-        ws = wb.active
-        headers = [cell.value for cell in ws[1]]
-        rows = []
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            rows.append(dict(zip(headers, row)))
-    except Exception:
-        return jsonify({'message': 'Failed to parse file'}), 400
+    filename = file.filename.lower() if file.filename else ''
 
+    # ── Detect file type by extension (more reliable than MIME type) ──
+    rows = []
+    if filename.endswith('.csv'):
+        # ✅ Handle CSV
+        try:
+            content = file.read().decode('utf-8-sig')  # utf-8-sig strips BOM if present
+            reader = csv.DictReader(io.StringIO(content))
+            rows = [row for row in reader]
+        except UnicodeDecodeError:
+            try:
+                file.seek(0)
+                content = file.read().decode('latin-1')
+                reader = csv.DictReader(io.StringIO(content))
+                rows = [row for row in reader]
+            except Exception as e:
+                return jsonify({'message': f'Failed to read CSV file: {str(e)}'}), 400
+        except Exception as e:
+            return jsonify({'message': f'Failed to parse CSV: {str(e)}'}), 400
+
+    elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+        # ✅ Handle Excel
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(io.BytesIO(file.read()))
+            ws = wb.active
+            headers = [str(cell.value).strip() if cell.value is not None else '' for cell in ws[1]]
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                # Skip completely empty rows
+                if any(v is not None for v in row):
+                    rows.append(dict(zip(headers, row)))
+        except Exception as e:
+            return jsonify({'message': f'Failed to parse Excel file: {str(e)}'}), 400
+
+    else:
+        # ✅ Clear error message telling user what's wrong
+        return jsonify({
+            'message': f'Unsupported file type "{file.filename}". Please upload a .csv, .xlsx, or .xls file.'
+        }), 400
+
+    if not rows:
+        return jsonify({'message': 'File is empty or has no data rows'}), 400
+
+    # ── Process rows ──────────────────────────────────────────────────
     created = []
     errors = []
-    for row in rows:
+
+    for i, row in enumerate(rows, start=2):  # start=2 because row 1 is header
         try:
-            if not row.get('name') or not row.get('price'):
-                errors.append({'row': row, 'error': 'Missing required fields'})
+            name = str(row.get('name', '') or '').strip()
+            price_raw = row.get('price', '')
+
+            if not name:
+                errors.append({'row': i, 'error': 'Missing required field: name'})
                 continue
+            if not price_raw:
+                errors.append({'row': i, 'error': 'Missing required field: price'})
+                continue
+
             p = Product(
-                name=row['name'],
-                description=row.get('description', ''),
-                price=float(row['price']),
+                name=name,
+                description=str(row.get('description', '') or '').strip(),
+                price=float(price_raw),
                 offer_price=float(row['offerPrice']) if row.get('offerPrice') else None,
                 stock=int(row['stock']) if row.get('stock') else 0,
-                image_url=row.get('imageUrl', ''),
-                category=row.get('category', 'General'),
-                subcategory=row.get('subcategory', ''),
+                image_url=str(row.get('imageUrl', '') or '').strip(),
+                category=str(row.get('category', 'General') or 'General').strip(),
+                subcategory=str(row.get('subcategory', '') or '').strip(),
                 shop_id=shop.id
             )
             db.session.add(p)
             created.append(p)
-        except Exception as e:
-            errors.append({'row': row, 'error': str(e)})
 
-    db.session.commit()
+        except Exception as e:
+            errors.append({'row': i, 'error': str(e)})
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Database error: {str(e)}'}), 500
+
     return jsonify({
-        'message': f'Processed {len(rows)} items',
+        'message': f'Processed {len(rows)} rows',
         'successCount': len(created),
         'failedCount': len(errors),
         'errors': errors
