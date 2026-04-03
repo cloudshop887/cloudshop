@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from sqlalchemy import text
 import os
 import logging
 import sys
@@ -22,7 +23,7 @@ from routes.distance_routes import distance_bp
 
 load_dotenv()
 
-# Setup logging for production
+# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -32,77 +33,106 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Configuration - NEON DATABASE ONLY
+# ──────────────────────────────────────────────
+# DATABASE CONFIGURATION
+# ──────────────────────────────────────────────
 db_url = os.getenv('DATABASE_URL')
 
 if not db_url:
-    logger.error("ERROR: DATABASE_URL environment variable is required (Neon PostgreSQL connection string)")
+    logger.error("ERROR: DATABASE_URL environment variable is required")
     raise ValueError("DATABASE_URL environment variable is required")
 
-is_production = os.getenv('FLASK_ENV') == 'production'
-
-# Convert postgres:// to postgresql://
+# Fix: convert postgres:// → postgresql:// (required by SQLAlchemy)
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 
-# Ensure SSL for Neon
+# Fix: ensure SSL for Neon
 if 'sslmode' not in db_url:
     separator = '&' if '?' in db_url else '?'
     db_url += f"{separator}sslmode=require"
 
+is_production = os.getenv('FLASK_ENV') == 'production'
+
 logger.info(f"Starting Flask app in {'PRODUCTION' if is_production else 'DEVELOPMENT'} mode")
 logger.info(f"Database: Neon PostgreSQL (SSL enabled)")
 
+# ──────────────────────────────────────────────
+# APP CONFIGURATION
+# ──────────────────────────────────────────────
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    # Fix: connection pool settings for Neon (serverless postgres)
+    'pool_pre_ping': True,       # Test connection before using from pool
+    'pool_recycle': 300,         # Recycle connections every 5 min
+    'pool_size': 5,
+    'max_overflow': 2,
+    'connect_args': {
+        'sslmode': 'require',
+        'connect_timeout': 10,
+    }
+}
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'cloudshop-secret-key-2024')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Token doesn't expire (30d equivalent)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = not is_production
 app.config['JSON_SORT_KEYS'] = False
 
-# Initialize extensions
+# ──────────────────────────────────────────────
+# EXTENSIONS
+# ──────────────────────────────────────────────
 db.init_app(app)
 jwt = JWTManager(app)
 
-# Initialize SocketIO with production settings
+# Fix: use 'threading' consistently for dev; gunicorn handles production
 socketio.init_app(
     app,
     cors_allowed_origins="*",
-    async_mode='threading' if not is_production else 'gevent',
+    async_mode='threading',
     engineio_logger=not is_production,
-    socketio_logger=not is_production
+    socketio_logger=not is_production,
+    ping_timeout=60,
+    ping_interval=25,
 )
 
-# CORS - allow frontend and any vercel previews
+# Fix: remove supports_credentials when origins is wildcard (they conflict)
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["*"],  # Wildcard for development/vercel ease
+        "origins": os.getenv('FRONTEND_URL', 'http://localhost:5173'),
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True
     }
 })
 
-# Register Blueprints - single registration for /api prefix
-app.register_blueprint(auth_bp, url_prefix='/api/auth')
-app.register_blueprint(shop_bp, url_prefix='/api/shops')
-app.register_blueprint(product_bp, url_prefix='/api/products')
-app.register_blueprint(order_bp, url_prefix='/api/orders')
+# ──────────────────────────────────────────────
+# BLUEPRINTS
+# ──────────────────────────────────────────────
+app.register_blueprint(auth_bp,         url_prefix='/api/auth')
+app.register_blueprint(shop_bp,         url_prefix='/api/shops')
+app.register_blueprint(product_bp,      url_prefix='/api/products')
+app.register_blueprint(order_bp,        url_prefix='/api/orders')
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')
-app.register_blueprint(lost_found_bp, url_prefix='/api/lost-found')
-app.register_blueprint(job_bp, url_prefix='/api/jobs')
-app.register_blueprint(offer_bp, url_prefix='/api/offers')
-app.register_blueprint(alert_bp, url_prefix='/api/alerts')
-app.register_blueprint(reservation_bp, url_prefix='/api/reservations')
-app.register_blueprint(admin_bp, url_prefix='/api/admin')
-app.register_blueprint(distance_bp, url_prefix='/api/distance')
+app.register_blueprint(lost_found_bp,   url_prefix='/api/lost-found')
+app.register_blueprint(job_bp,          url_prefix='/api/jobs')
+app.register_blueprint(offer_bp,        url_prefix='/api/offers')
+app.register_blueprint(alert_bp,        url_prefix='/api/alerts')
+app.register_blueprint(reservation_bp,  url_prefix='/api/reservations')
+app.register_blueprint(admin_bp,        url_prefix='/api/admin')
+app.register_blueprint(distance_bp,     url_prefix='/api/distance')
+
+# ──────────────────────────────────────────────
+# ROUTES
+# ──────────────────────────────────────────────
+@app.route('/ping')
+def ping():
+    return "pong", 200
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint — also tests DB connection"""
     try:
-        # Test database connection
-        db.session.execute('SELECT 1')
+        # Fix: use text() wrapper required by SQLAlchemy 2.x
+        db.session.execute(text('SELECT 1'))
         return jsonify({'status': 'healthy', 'database': 'connected'}), 200
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
@@ -110,28 +140,27 @@ def health_check():
 
 @app.route('/api/debug-ping')
 def debug_ping():
-    """Debug endpoint to check configuration"""
+    """Debug endpoint — shows sanitized DB host and env"""
     safe_db_url = app.config['SQLALCHEMY_DATABASE_URI']
     if '@' in safe_db_url:
         safe_db_url = safe_db_url.split('@')[-1]
     return jsonify({
         'status': 'OK',
-        'database': safe_db_url,
+        'database_host': safe_db_url,
         'environment': os.getenv('FLASK_ENV', 'development'),
-        'initialized': _db_initialized
+        'db_initialized': _db_initialized,
+        'db_errors': _db_init_errors or None,
     }), 200
 
-@app.route('/ping')
-def ping():
-    return "pong", 200
-
+# ──────────────────────────────────────────────
+# ERROR HANDLERS
+# ──────────────────────────────────────────────
 @app.errorhandler(Exception)
 def handle_exception(e):
-    """Global error handler"""
     import traceback
     error_msg = str(e)
     stack_trace = traceback.format_exc()
-    logger.error(f"ERROR: {error_msg}\n{stack_trace}")
+    logger.error(f"Unhandled exception: {error_msg}\n{stack_trace}")
     return jsonify({
         "message": "Internal Server Error",
         "error": error_msg,
@@ -140,26 +169,26 @@ def handle_exception(e):
 
 @app.errorhandler(404)
 def not_found(e):
-    """Handle 404 errors"""
     return jsonify({"message": "Route not found"}), 404
 
-# Lazy Init DB - only when requested to avoid cold-boot timeout
+# ──────────────────────────────────────────────
+# DATABASE INITIALIZATION
+# ──────────────────────────────────────────────
 _db_initialized = False
 _db_init_errors = []
 
 def initialize_database():
-    """Initialize the database with proper error handling"""
+    """Initialize DB tables and seed admin. Safe to call multiple times."""
     global _db_initialized, _db_init_errors
+    if _db_initialized:
+        return True
     try:
         with app.app_context():
-            logger.info("Attempting database initialization...")
+            logger.info("Initializing database...")
             db.create_all()
-            logger.info("Database tables created successfully")
-            
-            # Seed admin user
+            logger.info("Tables created successfully")
             seed_admin()
-            logger.info("Admin user seeding completed")
-            
+            logger.info("Admin seeding done")
             _db_initialized = True
             _db_init_errors = []
             return True
@@ -169,25 +198,31 @@ def initialize_database():
         import traceback
         logger.error(traceback.format_exc())
         _db_init_errors.append(error_msg)
-        db.session.rollback()
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         return False
 
 @app.before_request
 def setup_db():
-    """Initialize database on first request"""
+    """Lazy DB init — only runs once on first request."""
     global _db_initialized
     if not _db_initialized:
         initialize_database()
 
+# ──────────────────────────────────────────────
+# ENTRY POINT
+# ──────────────────────────────────────────────
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    debug_mode = os.getenv('FLASK_ENV') != 'production'
+    debug_mode = not is_production
+
     logger.info(f"Starting server on port {port} (debug={debug_mode})")
-    
-    # Initialize DB on startup
+
+    # Initialize DB before accepting requests
     initialize_database()
-    
-    # Use socketio.run for development, but gunicorn will handle production
+
     socketio.run(
         app,
         debug=debug_mode,
@@ -196,4 +231,3 @@ if __name__ == '__main__':
         allow_unsafe_werkzeug=True,
         log_output=True
     )
-

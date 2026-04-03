@@ -8,7 +8,9 @@ export default function CommunityAlerts() {
   const navigate = useNavigate();
 
   return (
-    <main className="min-h-screen pt-20 pb-12 bg-slate-50">
+    <>
+      <Navbar />
+      <main className="min-h-screen pt-20 pb-12 bg-slate-50">
 
       {/* Hero Section */}
       <div className="relative overflow-hidden mb-12">
@@ -57,5 +59,6 @@ export default function CommunityAlerts() {
         <p>&copy; 2026 CommunityAlert Platform. Built for a safer, more connected society.</p>
       </footer>
     </main>
+    </>
   );
 }
