@@ -35,7 +35,12 @@ const BulkUploadProduct = () => {
         try {
             const { data } = await api.post('/products/bulk-upload', formData);
 
-            console.log('Upload response:', data);
+            console.log('=== UPLOAD SUCCESS ===');
+            console.log('Full response:', data);
+            console.log('Success count:', data.successCount);
+            console.log('Failed count:', data.failedCount);
+            console.log('Errors:', data.errors);
+            
             setResult(data);
 
             // Show success message
@@ -44,10 +49,16 @@ const BulkUploadProduct = () => {
             }
 
         } catch (error) {
-            console.error('Upload error:', error);
-            console.error('Error response:', error.response);
+            console.error('=== UPLOAD ERROR ===');
+            console.error('Error object:', error);
+            console.error('EXACT SERVER ERROR:', error.response?.data);
+            console.error('Status code:', error.response?.status);
+            console.error('Error message:', error.message);
+            console.error('Error code:', error.code);
 
             const errorMessage = error.response?.data?.message || error.message || 'Failed to upload file';
+            console.log('Final error message shown to user:', errorMessage);
+            
             alert(`Upload failed: ${errorMessage}`);
 
             setResult({
