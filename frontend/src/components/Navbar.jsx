@@ -51,7 +51,7 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="fixed w-full z-50 glass border-b border-slate-200/50">
+            <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
 
@@ -59,14 +59,17 @@ const Navbar = () => {
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setIsOpen(true)}
-                                className="p-2 -ml-2 text-slate-600 hover:text-primary hover:bg-slate-100 rounded-full transition-colors"
+                                className="p-2 -ml-2 text-slate-700 hover:text-primary hover:bg-slate-100 rounded-full transition-all font-bold"
+                                title="Open menu"
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
 
-                            <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2">
-                                <ShoppingBag className="h-8 w-8 text-primary" />
-                                <span className="text-lg sm:text-xl font-bold tracking-wider text-slate-800 block">LocalLink</span>
+                            <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2 group">
+                                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                    <ShoppingBag className="h-6 w-6 text-primary font-bold" />
+                                </div>
+                                <span className="text-lg sm:text-xl font-black tracking-wide text-slate-900 drop-shadow-sm">LocalLink</span>
                             </Link>
                         </div>
 
