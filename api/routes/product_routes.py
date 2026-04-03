@@ -4,6 +4,7 @@ from database import db
 from models.product import Product
 from models.shop import Shop
 from models.user import User
+import os
 
 product_bp = Blueprint('products', __name__)
 
@@ -173,54 +174,87 @@ def delete_product(product_id):
 @product_bp.route('/bulk-upload', methods=['POST'])
 @jwt_required()
 def bulk_upload_products():
-    user_id = int(get_jwt_identity())
-    shop = Shop.query.filter_by(owner_id=user_id).first()
-    if not shop:
-        return jsonify({'message': 'No shop found for this user'}), 404
-
-    if 'file' not in request.files:
-        return jsonify({'message': 'Please upload an Excel (.xlsx, .xls) or CSV (.csv) file'}), 400
-
-    file = request.files['file']
     import io
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
-        import openpyxl
-        wb = openpyxl.load_workbook(io.BytesIO(file.read()))
-        ws = wb.active
-        headers = [cell.value for cell in ws[1]]
-        rows = []
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            rows.append(dict(zip(headers, row)))
-    except Exception:
-        return jsonify({'message': 'Failed to parse file'}), 400
+        user_id = int(get_jwt_identity())
+        logger.info(f"Bulk upload started by user {user_id}")
+        
+        shop = Shop.query.filter_by(owner_id=user_id).first()
+        if not shop:
+            logger.warning(f"User {user_id} has no shop")
+            return jsonify({'message': 'You must create a shop first before uploading products. Go to "Register Your Shop" and setup your shop.'}), 404
 
-    created = []
-    errors = []
-    for row in rows:
+        if 'file' not in request.files:
+            logger.warning(f"No file in request from user {user_id}")
+            return jsonify({'message': 'Please upload an Excel (.xlsx, .xls) or CSV (.csv) file'}), 400
+
+        file = request.files['file']
+        
+        if not file or file.filename == '':
+            logger.warning(f"Empty filename from user {user_id}")
+            return jsonify({'message': 'No file selected'}), 400
+        
+        # Validate file extension
+        valid_extensions = {'.xlsx', '.xls', '.csv'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in valid_extensions:
+            logger.warning(f"Invalid file type: {file_ext} from user {user_id}")
+            return jsonify({'message': f'Invalid file type. Please upload .xlsx, .xls, or .csv file'}), 400
+        
         try:
-            if not row.get('name') or not row.get('price'):
-                errors.append({'row': row, 'error': 'Missing required fields'})
-                continue
-            p = Product(
-                name=row['name'],
-                description=row.get('description', ''),
-                price=float(row['price']),
-                offer_price=float(row['offerPrice']) if row.get('offerPrice') else None,
-                stock=int(row['stock']) if row.get('stock') else 0,
-                image_url=row.get('imageUrl', ''),
-                category=row.get('category', 'General'),
-                subcategory=row.get('subcategory', ''),
-                shop_id=shop.id
-            )
-            db.session.add(p)
-            created.append(p)
+            import openpyxl
+            logger.info(f"Parsing file: {file.filename}")
+            file_content = file.read()
+            file.seek(0)  # Reset file pointer
+            
+            wb = openpyxl.load_workbook(io.BytesIO(file_content))
+            ws = wb.active
+            headers = [cell.value for cell in ws[1]]
+            rows = []
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                rows.append(dict(zip(headers, row)))
+            
+            logger.info(f"File parsed successfully. Found {len(rows)} rows")
         except Exception as e:
-            errors.append({'row': row, 'error': str(e)})
+            logger.error(f"Failed to parse file: {str(e)}")
+            return jsonify({'message': f'Failed to parse file: {str(e)}'}), 400
 
-    db.session.commit()
-    return jsonify({
-        'message': f'Processed {len(rows)} items',
-        'successCount': len(created),
-        'failedCount': len(errors),
-        'errors': errors
-    }), 200
+        created = []
+        errors = []
+        for idx, row in enumerate(rows, start=2):
+            try:
+                if not row.get('name') or not row.get('price'):
+                    errors.append({'row': idx, 'error': 'Missing required fields (name, price)'})
+                    continue
+                p = Product(
+                    name=row['name'],
+                    description=row.get('description', ''),
+                    price=float(row['price']),
+                    offer_price=float(row['offerPrice']) if row.get('offerPrice') else None,
+                    stock=int(row['stock']) if row.get('stock') else 0,
+                    image_url=row.get('imageUrl', ''),
+                    category=row.get('category', 'General'),
+                    subcategory=row.get('subcategory', ''),
+                    shop_id=shop.id
+                )
+                db.session.add(p)
+                created.append(p)
+            except Exception as e:
+                logger.error(f"Error processing row {idx}: {str(e)}")
+                errors.append({'row': idx, 'error': str(e)})
+
+        db.session.commit()
+        logger.info(f"Bulk upload complete: {len(created)} created, {len(errors)} errors")
+        
+        return jsonify({
+            'message': f'Processed {len(rows)} items',
+            'successCount': len(created),
+            'failedCount': len(errors),
+            'errors': errors
+        }), 200
+    except Exception as e:
+        logger.error(f"Bulk upload failed: {str(e)}", exc_info=True)
+        return jsonify({'message': f'Server error: {str(e)}'}), 500
