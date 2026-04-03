@@ -27,7 +27,7 @@ const BulkUploadProduct = () => {
         if (!file) return;
 
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', file, file.name);
 
         setUploading(true);
         setResult(null); // Clear previous results

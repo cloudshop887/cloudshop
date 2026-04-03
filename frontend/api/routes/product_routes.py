@@ -6,8 +6,66 @@ from models.shop import Shop
 from models.user import User
 import io
 import csv
+import zipfile
 
 product_bp = Blueprint('products', __name__)
+
+
+def _normalize_upload_filename(file_storage):
+    raw_name = (file_storage.filename or '').strip()
+    if raw_name:
+        raw_name = raw_name.split('/')[-1].split('\\')[-1]
+    return raw_name
+
+
+def _detect_spreadsheet_type(file_storage, filename):
+    lowered_name = filename.lower()
+    mimetype = (file_storage.mimetype or '').lower()
+
+    if lowered_name.endswith('.csv') or mimetype in {'text/csv', 'application/csv', 'text/plain'}:
+        return 'csv'
+
+    if lowered_name.endswith('.xlsx') or mimetype in {
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }:
+        return 'xlsx'
+
+    if lowered_name.endswith('.xls') or mimetype in {
+        'application/vnd.ms-excel',
+        'application/octet-stream',
+    }:
+        return 'xls'
+
+    position = file_storage.stream.tell()
+    header = file_storage.stream.read(4096)
+    file_storage.stream.seek(position)
+
+    if not header:
+        return None
+
+    if header.startswith(b'PK'):
+        try:
+            with zipfile.ZipFile(io.BytesIO(header + file_storage.stream.read())) as archive:
+                if any(name.startswith('xl/') for name in archive.namelist()):
+                    file_storage.stream.seek(position)
+                    return 'xlsx'
+        except Exception:
+            file_storage.stream.seek(position)
+
+    file_storage.stream.seek(position)
+
+    try:
+        sample = header.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        try:
+            sample = header.decode('latin-1')
+        except UnicodeDecodeError:
+            return None
+
+    if ',' in sample or ';' in sample or '\n' in sample:
+        return 'csv'
+
+    return None
 
 def get_optional_user():
     try:
@@ -184,11 +242,13 @@ def bulk_upload_products():
         return jsonify({'message': 'No file uploaded. Please attach a file with field name "file"'}), 400
 
     file = request.files['file']
-    filename = file.filename.lower() if file.filename else ''
+    filename = _normalize_upload_filename(file)
+    detected_type = _detect_spreadsheet_type(file, filename)
+    file.stream.seek(0)
 
     # ── Detect file type by extension (more reliable than MIME type) ──
     rows = []
-    if filename.endswith('.csv'):
+    if detected_type == 'csv':
         # ✅ Handle CSV
         try:
             content = file.read().decode('utf-8-sig')  # utf-8-sig strips BOM if present
@@ -196,7 +256,7 @@ def bulk_upload_products():
             rows = [row for row in reader]
         except UnicodeDecodeError:
             try:
-                file.seek(0)
+                file.stream.seek(0)
                 content = file.read().decode('latin-1')
                 reader = csv.DictReader(io.StringIO(content))
                 rows = [row for row in reader]
@@ -205,7 +265,7 @@ def bulk_upload_products():
         except Exception as e:
             return jsonify({'message': f'Failed to parse CSV: {str(e)}'}), 400
 
-    elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+    elif detected_type in {'xlsx', 'xls'}:
         # ✅ Handle Excel
         try:
             import openpyxl
@@ -222,7 +282,10 @@ def bulk_upload_products():
     else:
         # ✅ Clear error message telling user what's wrong
         return jsonify({
-            'message': f'Unsupported file type "{file.filename}". Please upload a .csv, .xlsx, or .xls file.'
+            'message': (
+                f'Unsupported file type "{filename or "unnamed file"}". '
+                'Please upload a .csv, .xlsx, or .xls file.'
+            )
         }), 400
 
     if not rows:
