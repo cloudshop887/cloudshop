@@ -25,21 +25,29 @@ def seed_admin():
         
         # Check if admin already exists
         admin = User.query.filter_by(email='admin@cloudshop.com').first()
-        if not admin:
-            admin = User(
-                full_name='Admin',
-                email='admin@cloudshop.com',
-                password=generate_password_hash('Admin@123'),
-                role='ADMIN'
-            )
-            db.session.add(admin)
-            db.session.commit()
-            logger.info('[OK] Default admin created: admin@cloudshop.com / Admin@123')
-        else:
-            logger.info('[OK] Admin user already exists')
+        if admin:
+            logger.info(f'✅ Admin user already exists: admin@cloudshop.com (ID: {admin.id})')
+            return admin
+        
+        # Create new admin
+        hashed_password = generate_password_hash('Admin@123')
+        admin = User(
+            full_name='Admin',
+            email='admin@cloudshop.com',
+            password=hashed_password,
+            role='ADMIN'
+        )
+        db.session.add(admin)
+        db.session.flush()  # Get the ID before commit
+        
+        db.session.commit()
+        logger.info(f'✅ Default admin created: admin@cloudshop.com / Admin@123 (ID: {admin.id})')
+        return admin
     except Exception as e:
-        logger.error(f"Failed to seed admin user: {str(e)}")
+        db.session.rollback()
+        logger.error(f"❌ Failed to seed admin user: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
         # Don't raise - continue anyway as this is not critical
+        return None
 

@@ -152,6 +152,52 @@ def debug_ping():
         'db_errors': _db_init_errors or None,
     }), 200
 
+@app.route('/api/check-admin', methods=['GET'])
+def check_admin():
+    """Check if admin user exists and recreate if needed"""
+    try:
+        from models.user import User
+        admin = User.query.filter_by(email='admin@cloudshop.com').first()
+        
+        if admin:
+            return jsonify({
+                'status': 'OK',
+                'admin_exists': True,
+                'admin_id': admin.id,
+                'admin_email': admin.email,
+                'admin_role': admin.role,
+                'message': 'Admin user found!'
+            }), 200
+        else:
+            # Try to recreate admin
+            logger.info("Admin not found, attempting to recreate...")
+            recreated_admin = seed_admin()
+            if recreated_admin:
+                return jsonify({
+                    'status': 'CREATED',
+                    'admin_exists': True,
+                    'admin_id': recreated_admin.id,
+                    'admin_email': recreated_admin.email,
+                    'admin_role': recreated_admin.role,
+                    'message': 'Admin user was recreated!',
+                    'credentials': {
+                        'email': 'admin@cloudshop.com',
+                        'password': 'Admin@123'
+                    }
+                }), 200
+            else:
+                return jsonify({
+                    'status': 'ERROR',
+                    'admin_exists': False,
+                    'message': 'Failed to create admin user'
+                }), 500
+    except Exception as e:
+        logger.error(f"Error checking admin: {str(e)}")
+        return jsonify({
+            'status': 'ERROR',
+            'message': str(e)
+        }), 500
+
 # ──────────────────────────────────────────────
 # ERROR HANDLERS
 # ──────────────────────────────────────────────
